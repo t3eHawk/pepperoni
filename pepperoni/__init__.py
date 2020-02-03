@@ -7,11 +7,11 @@ from .record import Record
 from .utils import py_file
 
 __author__ = 'Timur Faradzhov'
-__copyright__ = 'Copyright 2019, The Pepperoni Project'
+__copyright__ = 'Copyright 2020, The Pepperoni Project'
 __credits__ = ['Timur Faradzhov']
 
 __license__ = 'MIT'
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 __maintainer__ = 'Timur Faradzhov'
 __email__ = 'timurfaradzhov@gmail.com'
 __status__ = 'Development'

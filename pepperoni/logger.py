@@ -478,6 +478,8 @@ class Logger():
                 err_name = err_type.__name__
                 err_value = err_value
 
+                err_traceback = []
+                raw = self.formatter.traceback
                 for tb in traceback.walk_tb(err_tb):
                     f_code = tb[0].f_code
 
@@ -485,10 +487,13 @@ class Logger():
                     err_line = tb[1]
                     err_obj = f_code.co_name
 
-                    self.record(rectype, message, error=True,
-                                err_name=err_name, err_value=err_value,
-                                err_file=err_file, err_line=err_line,
-                                err_obj=err_obj, **kwargs)
+                    new = raw.format(file=err_file, line=err_line, obj=err_obj)
+                    err_traceback.append(new)
+                err_traceback = ' '.join(err_traceback)
+
+                self.record(rectype, message, error=True,
+                            err_name=err_name, err_value=err_value,
+                            err_traceback=err_traceback, **kwargs)
             elif format is False:
                 exception = traceback.format_exception(err_type, err_value,
                                                        err_tb)
