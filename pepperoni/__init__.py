@@ -1,9 +1,19 @@
-from .conf import all_loggers
-from .formatter import Formatter
-from .header import Header
+"""Developer-friendly tool kit.
+
+This module proposes such developer tools as:
+- Logger - tool for advanced logging.
+- Sysinfo - tool to read system information and user parameters and arguments.
+- Credentials - tool to read user/password details from special configuration
+  files.
+- Database - tool to connect and work with databases using SQLAlchemy.
+"""
+
+
+from .cache import all_loggers
+from .credentials import Credentials
+from .database import Database
 from .logger import Logger
-from .output import Output
-from .record import Record
+from .sysinfo import Sysinfo
 from .utils import py_file
 
 __author__ = 'Timur Faradzhov'
@@ -11,15 +21,15 @@ __copyright__ = 'Copyright 2020, The Pepperoni Project'
 __credits__ = ['Timur Faradzhov']
 
 __license__ = 'MIT'
-__version__ = '0.1.1'
+__version__ = '0.2.0'
 __maintainer__ = 'Timur Faradzhov'
 __email__ = 'timurfaradzhov@gmail.com'
 __status__ = 'Development'
 
-__doc__ = 'Module for extended logging in Python.'
 
 def logger(name=None, **kwargs):
     """Get new logger or return existing one.
+
     If parameter name is omitted then return main application logger.
     All other named parameters will be used for configuration.
 
@@ -43,36 +53,56 @@ def logger(name=None, **kwargs):
     else:
         return Logger(name=name, **kwargs)
 
-getlogger = logger
 
-applogger = getlogger(file=False, console=True, debug=True)
+__logger = logger(file=False, console=True, debug=True)
+
 
 def info(*args, **kwargs):
-    """Print INFO message in main application logger."""
-    applogger.info(*args, **kwargs)
+    """Write INFO message to main application logger."""
+    __logger.info(*args, **kwargs)
     pass
+
 
 def debug(*args, **kwargs):
-    """Print DEBUG message in main application logger."""
-    applogger.debug(*args, **kwargs)
+    """Write DEBUG message to main application logger."""
+    __logger.debug(*args, **kwargs)
     pass
+
 
 def warning(*args, **kwargs):
-    """Print WARNING message in main application logger."""
-    applogger.warning(*args, **kwargs)
+    """Write WARNING message to main application logger."""
+    __logger.warning(*args, **kwargs)
     pass
+
 
 def error(*args, **kwargs):
-    """Print ERROR message in main application logger."""
-    applogger.error(*args, **kwargs)
+    """Write ERROR message to main application logger."""
+    __logger.error(*args, **kwargs)
     pass
 
+
 def critical(*args, **kwargs):
-    """Print CRITICAL message in main application logger."""
-    applogger.critical(*args, **kwargs)
+    """Write CRITICAL message to main application logger."""
+    __logger.critical(*args, **kwargs)
     pass
+
 
 def configure(*args, **kwargs):
     """Configure main application logger."""
-    applogger.configure(*args, **kwargs)
+    __logger.configure(*args, **kwargs)
     pass
+
+
+def sysinfo():
+    """Get Sysinfo object."""
+    return Sysinfo()
+
+
+def credentials():
+    """Get Credentials object."""
+    return Credentials()
+
+
+def database(*args, **kwargs):
+    """Get Database object."""
+    return Database(*args, **kwargs)

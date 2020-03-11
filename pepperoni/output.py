@@ -1,3 +1,5 @@
+"""Elements reflecting output objects."""
+
 import datetime as dt
 import functools
 import os
@@ -9,29 +11,32 @@ from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+from .database import Database
 from .record import Record
 from .utils import py_dir
 
+
 def you_shall_not_pass(func):
-    """Decorator that used to prevent an access to inactive output."""
+    """Prevent access to an inactive output."""
     @functools.wraps(func)
     def wrapper(output, *args, **kwargs):
         if output.status is True:
             func(output, *args, **kwargs)
     return wrapper
 
+
 class Output():
-    """This class is a parent for all outputs.
+    """Parent class for all outputs.
 
     Parameters
     ----------
     status : bool, optional
-        The argument is used to open or close the output.
+        Used to open or close the output.
 
     Arguments
     ---------
     status : bool
-        The status of the output.
+        Status for this particular output.
     """
 
     def __init__(self, status=False):
@@ -40,36 +45,39 @@ class Output():
 
     @property
     def status(self):
-        """Output status."""
+        """Get output status."""
         return self._status
 
     def open(self):
-        """Make output active."""
+        """Make this output active."""
         self._status = True
         pass
 
     def close(self):
-        """Make output inactive."""
+        """Make this output inactive."""
         self._status = False
         pass
 
+
 class Branch(Output):
-    """This class is a parent for each low-level output object e.g. console,
-    file, email, database table, and HTML document.
+    """Output branch.
+
+    Parent class for each low-level output object e.g. console, file, email,
+    database table, and HTML document.
 
     Parameters
     ----------
     root : Output
-        The argument is used to set `root` attribute.
+        Used to set `root` attribute.
     status : bool
         The argument that is used to enable or disable output.
 
     Attributes
     ----------
     root : Root
-        The low-level `Output` that is a root of this branch.
+        Low-level output that is a root of this branch.
     status : bool
-        The status of the output.
+        Status for this particular output.
     """
 
     def __init__(self, root, status=False):
@@ -79,11 +87,14 @@ class Branch(Output):
 
     @property
     def root(self):
-        """The low-level `Output` that is a root of this branch."""
+        """Low-level output that is a root of this branch."""
         return self._root
 
+
 class Root(Output):
-    """This class represents the output root - low-level output object that is
+    """Output root.
+
+    This class represents the output root - low-level output object that is
     literally a bridge between logger inputs and high-level outputs like
     console. file, email, database table and HTML document.
 
@@ -95,37 +106,37 @@ class Root(Output):
     logger : Logger
         The `Logger` that owns that output root.
     status : bool, optional
-        The argument is used to open or close the output.
+        Used to open or close the output.
     console : bool, optional
-        The argument is used for `status` argument of `Console` class.
+        Used for `status` argument of `Console` class.
     file : bool, optional
-        The argument is used for `status` argument of `File` class.
+        Used for `status` argument of `File` class.
     email : bool, optional
-        The argument is used for `status` argument of `Email` class.
+        Used for `status` argument of `Email` class.
     html : bool, optional
-        The argument is used for `status` argument of `HTML` class.
+        Used for `status` argument of `HTML` class.
     table : bool, optional
-        The argument is used for `status` argument of `Table` class.
+        Used for `status` argument of `Table` class.
     status : bool, optional
         The overall status of the `Root`.
     directory : str, optional
-        The argument is used for `dir` argument of `File` class.
+        Used for `dir` argument of `File` class.
     filename : str, optional
-        The argument is used for `name` argument of `File` class.
+        Used for `name` argument of `File` class.
     extension : str, optional
-        The argument is used for `extension` argument of `File` class.
+        Used for `extension` argument of `File` class.
     smtp : dict, optional
-        The argument is used to pass `address`, `host`, `port`, `tls`, `user`,
+        Used to pass `address`, `host`, `port`, `tls`, `user`,
         `password` and `recipients` arguments to `Email` class.
     db : dict, optional
-        The argument is used to pass `vendor`, `host`, `port`, `sid`, `user`,
+        Used to pass `vendor`, `host`, `port`, `sid`, `user`,
         `password`, `schema`, `table`, `proxy`, `db` and `date_column`
         arguments to `Table` class.
 
     Attributes
     ----------
     status : bool
-        The status of the output.
+        Status for this particular output.
     logger : Logger
         The `Logger` object that owns that output.
     console : Console
@@ -151,10 +162,10 @@ class Root(Output):
         path = dict(dir=directory, name=filename, ext=extension)
         self.file = File(self, status=file, **path)
 
+        self.html = HTML(self, status=html)
+
         smtp = smtp if isinstance(smtp, dict) is True else {}
         self.email = Email(self, status=email, **smtp)
-
-        self.html = HTML(self, status=html)
 
         db = db if isinstance(db, dict) is True else {}
         self.table = Table(self, status=table, **db)
@@ -169,28 +180,30 @@ class Root(Output):
         record : str or Record
             The data that must be written to writable outputs.
         """
-        if isinstance(record, Record) is True: record = record.create()
+        if isinstance(record, Record) is True:
+            record = record.create()
         self.console.write(record)
         self.file.write(record)
         self.html.write(record)
         pass
 
+
 class Console(Branch):
-    """This class represents console output.
+    """Represents console output.
 
     Parameters
     ----------
     root : Output
-        The argument is used to set `root` attribute.
+        Used to set `root` attribute.
     status : bool
         The argument that is used to enable or disable output.
 
     Attributes
     ----------
     root : Root
-        The low-level `Output` that is a root of this branch.
+        Low-level output that is a root of this branch.
     status : bool
-        The status of the output.
+        Status for this particular output.
     """
 
     @you_shall_not_pass
@@ -205,28 +218,29 @@ class Console(Branch):
         print(record, end='')
         pass
 
+
 class File(Branch):
-    """This class represents file output.
+    """Represents file output.
 
     Parameters
     ----------
     root : Output
-        The argument is used to set `root` attribute.
+        Used to set `root` attribute.
     status : bool, optional
-        The argument is used to open or close the output.
+        Used to open or close the output.
     dir : str, optional
-        The argument is used to set `dir` attribute.
+        Used to set `dir` attribute.
     name : str, optional
-        The argument is used to set `name` attribute.
+        Used to set `name` attribute.
     ext : str, optional
-        The argument is used to set `ext` attribute.
+        Used to set `ext` attribute.
 
     Attributes
     ----------
     root : Root
-        The low-level `Output` that is a root of this branch.
+        Low-level output that is a root of this branch.
     status : bool
-        The status of the output.
+        Status for this particular output.
     dir : str
         The path to folder in which output file must be created.
         By default we use the *logs* folder in current location.
@@ -247,17 +261,17 @@ class File(Branch):
 
     @property
     def path(self):
-        """Absolute path to output file."""
+        """Return absolute path to output file."""
         return self._path
 
     @property
     def modified(self):
-        """Last time when file was modified."""
+        """Return last time when file was modified."""
         return self._modified
 
     @property
     def size(self):
-        """Current file size."""
+        """Return current file size."""
         return self._size
 
     def configure(self, dir=None, name=None, ext=None):
@@ -266,20 +280,23 @@ class File(Branch):
         Parameters
         ----------
         dir : str, optional
-            The argument is used to define path to folder in which output file
+            Used to define path to folder in which output file
             must be created. By default it will be the *logs* folder in current
             location.
         name : str, optional
-            The argument is used to define the name of output file. By default
+            Used to define the name of output file. By default
             it will be the string representing the start date of logging in
             format *YYYYMMDDHHMISS*.
         ext : str, optional
-            The argument is used to define the extension of output file. By
+            Used to define the extension of output file. By
             default we use *log* extension.
         """
-        if isinstance(dir, str) is True: self.dir = dir
-        if isinstance(name, str) is True: self.name = name
-        if isinstance(ext, str) is True: self.ext = ext
+        if isinstance(dir, str) is True:
+            self.dir = dir
+        if isinstance(name, str) is True:
+            self.name = name
+        if isinstance(ext, str) is True:
+            self.ext = ext
         if dir is not None or name is not None or ext is not None:
             self.new()
         pass
@@ -302,8 +319,9 @@ class File(Branch):
 
     @you_shall_not_pass
     def write(self, record):
-        """Write data to output file. For that purprose standard Python file
-        handling will be used.
+        """Write data to output file.
+
+        Built-in Python file handling will be used.
         This method will also:
             - Creating output file path if it is not exists yet.
             - Updating output file modify time and current size attributes.
@@ -317,7 +335,8 @@ class File(Branch):
         if self.__handler is None:
             # Check the directories.
             dirname = os.path.dirname(self._path)
-            if os.path.exists(dirname) is False: os.makedirs(dirname)
+            if os.path.exists(dirname) is False:
+                os.makedirs(dirname)
             # Make file.
             self.__handler = open(self._path, 'a')
 
@@ -332,37 +351,40 @@ class File(Branch):
         self._size = os.stat(self._path).st_size
         pass
 
+
 class Email(Branch):
-    """That class represents SMTP server and email used to send messages,
+    """Represents email output.
+
+    Gives access to SMTP server and email objects used to send messages,
     notifications and alarms.
 
     Parameters
     ----------
     root : Output
-        The argument is used to set `root` attribute.
+        Used to set `root` attribute.
     status : bool, optional
-        The argument is used to open or close the output.
+        Used to open or close the output.
     address : str, optional
-        The argument is used to set the `email` attribute.
+        Used to set the `email` attribute.
     host : str, optional
-        The argument is used to set the `host` attribute.
+        Used to set the `host` attribute.
     port : str or int, optional
-        The argument is used to set the `port` attribute.
+        Used to set the `port` attribute.
     tls : bool, optional
-        The argument is used to set `tls` attribute.
+        Used to set `tls` attribute.
     user : str, optional
-        The argument is used to set `user` attribute.
+        Used to set `user` attribute.
     password : str, optional
-        The argument is used to pass `password` argument to `connect()` method.
+        Used to pass `password` argument to `connect()` method.
     recipients : str or list, optional
-        The argument is used to set `recipients` attribute.
+        Used to set `recipients` attribute.
 
     Attributes
     ----------
     root : Root
-        The low-level `Output` that is a root of this branch.
+        Low-level output that is a root of this branch.
     status : bool
-        The status of the output.
+        Status for this particular output.
     address : str
         The email address using to send messages.
     host : str
@@ -391,20 +413,20 @@ class Email(Branch):
         Parameters
         ----------
         address : str, optional
-            The argument is used to set the `email` attribute.
+            Used to set the `email` attribute.
         host : str, optional
-            The argument is used to set the `host` attribute.
+            Used to set the `host` attribute.
         port : str or int, optional
-            The argument is used to set the `port` attribute.
+            Used to set the `port` attribute.
         tls : bool, optional
-            The argument is used to set `tls` attribute.
+            Used to set `tls` attribute.
         user : str, optional
-            The argument is used to set `user` attribute.
+            Used to set `user` attribute.
         password : str, optional
-            The argument is used to pass `password` argument to `connect()`
+            Used to pass `password` argument to `connect()`
             method.
         recipients : str or list, optional
-            The argument is used to set `recipients` attribute.
+            Used to set `recipients` attribute.
         """
         if isinstance(host, str) is True:
             self.host = host
@@ -420,12 +442,11 @@ class Email(Branch):
         if isinstance(address, (str, list)) is True:
             self.recipients = recipients
 
-        if host is not None or port is not None \
-        or user is not None or password is not None:
+        if (host is not None or port is not None or
+            user is not None or password is not None):
             try:
                 self.connect(password)
-            except:
-                self.root.logger.warning('Cannot connect to SMTP server')
+            except Exception:
                 self.root.logger.warning()
                 self._status = False
         pass
@@ -437,16 +458,16 @@ class Email(Branch):
         Parameters
         ----------
         password : str
-            The argument is used as password in SMTP server connection.
+            Used as password in SMTP server connection.
         """
         # You cannot connect to unknown host.
-        if hasattr(self, 'host') is False \
-        or isinstance(self.host, str) is False:
+        if (hasattr(self, 'host') is False or
+            isinstance(self.host, str) is False):
             raise AttributeError('incorrect host')
 
         # You must connect to certain port.
-        if hasattr(self, 'port') is False \
-        or isinstance(self.port, int) is False:
+        if (hasattr(self, 'port') is False or
+            isinstance(self.port, int) is False):
             raise AttributeError('incorrect port')
 
         # Creating connection with or without TLS.
@@ -477,13 +498,13 @@ class Email(Branch):
         Parameters
         ----------
         subject : str
-            The argument is used for message subject.
+            Used for message subject.
         text : str, MIMEText, list of str or list of MIMEText
-            The argument is used for messages text.
+            Used for messages text.
         recipients : str or list, optional
-            The argument is used for message receivers.
+            Used for message receivers.
         attachment : str or list of str, optional
-            The argument is used for path to message attachment.
+            Used for path to message attachment.
         type : str, optional
             The argument for MIMEText as _subtype. So actually it defines the
             type of the whole message (e.g. HTML).
@@ -531,10 +552,11 @@ class Email(Branch):
 
     @you_shall_not_pass
     def alarm(self, with_log=True):
-        """Send special alarm message. That message has the name of the
-        application in the subject, log header in the text and also log file
-        as an attahcment if it is enabled and if parameter with_log is set
-        to True.
+        """Send special alarm message.
+
+        That message has the name of the application in the subject, log
+        header in the text and also log file as an attahcment if it is enabled
+        and if parameter with_log is set to True.
         That method is a generic way used in Logger write methods to inform
         user about occured application errors. But it also can be used by
         user outside of the errors.
@@ -542,7 +564,7 @@ class Email(Branch):
         Parameters
         ----------
         with_log : bool, optional
-            The argument is used for attachment of logging output file to
+            Used for attachment of logging output file to
             the alarm message. The default is True.
         """
         subject = f'ALARM in {self.root.logger.app}!'
@@ -562,11 +584,14 @@ class Email(Branch):
 
     @you_shall_not_pass
     def write(self, record):
+        """Write record (not used)."""
         pass
 
+
 class HTML(Branch):
-    """This class represents HTML document which is a writable text output
-    that can be used when you need to style your logs or to display them on
+    """Represents HTML document output.
+
+    Can be used when you need to style your logs or to display them on
     some web application like dashboard.
     """
 
@@ -580,258 +605,129 @@ class HTML(Branch):
 
     @you_shall_not_pass
     def write(self, record):
+        """Write record (not used)."""
         pass
 
+
 class Table(Branch):
-    """This class represents a database table which can be used to generate
-    record in database table and update its fields with necessary values
-    during the logging process.
+    """Represents a database table output.
+
+    Can be used to generate record in database table and update its fields
+    with necessary values during the logging process.
 
     Parameters
     ----------
     root : Output
-        The argument is used to set `root` attribute.
+        Used to set `root` attribute.
     status : bool, optional
-        The argument is used to open or close the output.
-    vendor : str
-        The argument is used to set `vendor` attribute.
-    host : str, optional
-        The argument is used to set `host` attribute.
-    port : str or int, optional
-        The argument is used to set `port` attribute.
-    sid : str, optional
-        The argument is used to set `sid` attribute.
-    user : str, optional
-        The argument is used to set `user` attribute.
-    password : str, optional
-        The argument is used as a password in database connection.
-    schema : str, optional
-        The argument is used to set `schema` attribute.
-    table : str, optional
-        The argument is used to set `table` attribute.
-    proxy : sqlalchemy.sql.schema.Table, optional
-        The argument is used to set `proxy` attribute.
-    db : sqlalchemy.engine.base.Connection or sqlalchemy.engine.base.Engine,
-         optional
-        The argument is used to set `db` attribute.
+        Used to open or close the output.
     date_column : str, optional
-        The argument is used to set `date_column` attribute.
+        Used to set `date_column` attribute.
 
     Attributes
     ----------
     root : Root
-        The low-level `Output` that is a root of this branch.
+        Low-level output that is a root of this branch.
     status : bool
-        The status of the output.
-    vendor : str
-        The name of the database provider e.g. oracle, mysql, postgresql.
-    host : str
-        The host name or IP address on which database is running.
-    port : str or int
-        The port on which database can be accessed.
-    sid : str
-        Database name.
-    user : str
-        The account name used to login to database.
-    schema : str
-        The schema in which logging table is stored.
-    table : str
-        The name of the logging table.
-    proxy : sqlalchemy.sql.schema.Table
-        The parameter used to pass already predefined sqlalchemy.Table object
-        instead of creating new.
-    db : sqlalchemy.engine.base.Connection or sqlalchemy.engine.base.Engine
-        Parameter used to pass already predefined
-        sqlalchemy.engine.base.Connection or sqlalchemy.engine.base.Engine
-        objects and use them instead of creating new connection.
+        Status for this particular output.
     date_column : str
-        Name of the column in logging table which can be modified by application
-        to write last write date.
+        Name of the column in logging table which can be modified by
+        application to write last write date.
     """
 
-    def __init__(self, root, status=False, vendor=None, host=None, port=None,
-                 sid=None, user=None, password=None, schema=None, table=None,
-                 proxy=None, db=None, date_column=None):
+    def __init__(self, root, status=False, name=None, database=None,
+                 proxy=None, date_column=None, **kwargs):
         super().__init__(root, status=status)
-        self.vendor = None
-        self.host = None
-        self.port = None
-        self.sid = None
-        self.user = None
-        self.schema = None
-        self.table = None
-        self.db = None
+        self.name = None
+        self.database = None
         self.date_column = None
         self._primary_key = None
         self._primary_key_column = None
 
-        self.configure(vendor=vendor, host=host, port=port, sid=sid, user=user,
-                       password=password, schema=schema, table=table,
-                       proxy=proxy, db=db, date_column=date_column)
+        self.configure(name=name, database=database, proxy=proxy,
+                       date_column=date_column)
         pass
+
+    # Used for a compatibility with version 0.1.1.
+    @property
+    def db(self):
+        """Return database connection object."""
+        return self.database.connect()
 
     @property
     def primary_key(self):
-        """Return primary key of actual table record which is used for logging.
-        """
+        """Return primary key of actual table logging record."""
         return self._primary_key
 
-    def configure(self, vendor=None, host=None, port=None, sid=None, user=None,
-                  password=None, schema=None, table=None, proxy=None, db=None,
-                  date_column=None):
-        """Configure database connection and table.
+    def configure(self, name=None, database=None, proxy=None,
+                  date_column=None, **kwargs):
+        """Configure database and table.
 
         Parameters
         ----------
-        vendor : str
-            The argument is used to set `vendor` attribute.
-        host : str, optional
-            The argument is used to set `host` attribute.
-        port : str or int, optional
-            The argument is used to set `port` attribute.
-        sid : str, optional
-            The argument is used to set `sid` attribute.
-        user : str, optional
-            The argument is used to set `user` attribute.
-        password : str, optional
-            The argument is used as a password in database connection.
-        schema : str, optional
-            The argument is used to set `schema` attribute.
-        table : str, optional
-            The argument is used to set `table` attribute.
-        proxy : sqlalchemy.sql.schema.Table, optional
-            The argument is used to set `proxy` attribute.
-        db : sqlalchemy.engine.base.Connection or sqlalchemy.engine.base.Engine,
-            optional
-            The argument is used to set `db` attribute.
         date_column : str, optional
-            The argument is used to set `date_column` attribute.
+            Used to set `date_column` attribute.
         """
-        # Define object attributes.
-        if isinstance(vendor, str) is True:
-            self.vendor = vendor.lower()
-        if isinstance(host, str) is True:
-            self.host = host.lower()
-        if isinstance(port, int) is True:
-            self.port = port
-        if isinstance(sid, str) is True:
-            self.sid = sid.lower()
-        if isinstance(user, str) is True:
-            self.user = user.lower()
-        if isinstance(schema, str) is True:
-            self.schema = schema.lower()
-        if isinstance(table, str) is True:
-            self.table = table.lower()
-        if isinstance(date_column, str) is True:
-            self.date_column = date_column
+        if isinstance(name, str) is True:
+            self.name = name.lower()
 
         # Here is a creating of database connection.
-        if isinstance(db, sql.engine.base.Connection) is True:
-            self.db = db
-        else:
+        if isinstance(self.database, Database) is False:
+            if isinstance(database, Database) is True:
+                self.database = database
+            else:
+                vendor = kwargs.get('vendor')
+                engine = kwargs.get('engine')
+                if vendor is not None:
+                    db_kwargs = {}
+                    if engine is not None:
+                        db_kwargs['engine'] = engine
+                    else:
+                        db_kwargs['host'] = kwargs.get('host')
+                        db_kwargs['port'] = kwargs.get('port')
+                        db_kwargs['sid'] = kwargs.get('sid')
+                        db_kwargs['service'] = kwargs.get('service')
+                        db_kwargs['path'] = kwargs.get('path')
+                        db_kwargs['user'] = kwargs.get('user')
+                        db_kwargs['password'] = kwargs.get('password')
+                    self.database = Database(vendor, **db_kwargs)
+        # Check database connection.
+        if self.database is not None:
             try:
-                if isinstance(db, sql.engine.base.Engine) is True:
-                    self.db = db.connect()
-                elif (host is not None or port is not None or
-                      sid is not None or user is not None or
-                      password is not None):
-                    self.connect(password)
-            except:
-                self.root.logger.warning('Cannot connect to database')
+                conn = self.database.connect()
+                conn.close()
+            except Exception:
                 self.root.logger.warning()
                 self._status = False
-        # Here is a table declaration.
-        if (isinstance(proxy, sql.sql.schema.Table) is True or
-            table is not None):
-            if isinstance(proxy, sql.sql.schema.Table) is True:
-                self.proxy = proxy
-            elif table is not None:
-                self.load()
-            self._primary_key_column = self._get_primary_key_column()
-            self.new()
-        pass
+            else:
+                # Here is a table declaration.
+                if isinstance(proxy, sql.sql.schema.Table) is True:
+                    self.name = proxy.name
+                    self.proxy = proxy
+                elif isinstance(name, str) is True:
+                    self.name = name
+                    self.proxy = self.database.table(name)
+                else:
+                    tp = name.__class__.__name__
+                    raise TypeError(f'name must str not {tp}')
 
-    @you_shall_not_pass
-    def connect(self, password):
-        """Connect to database.
-        Most of the credentials are taken from the object public attributes.
-        Only password is a mandatory argument for that method due to security.
+                if isinstance(date_column, str) is True:
+                    self.date_column = date_column
 
-        Parameters
-        ----------
-        password : str
-            Password used to login.
-        """
-        # You need to know the vendor of the database to create correct
-        # connection.
-        if hasattr(self, 'vendor') is False \
-        or isinstance(self.vendor, str) is False:
-            raise AttributeError('incorrect vendor name')
-
-        # You cannot login to unknown database.
-        if hasattr(self, 'sid') is False \
-        or isinstance(self.sid, str) is False:
-            raise AttributeError('incorrect SID')
-
-        # Connection url for sqlite little bit differ from other databases.
-        if self.vendor == 'sqlite':
-            credentials = f'{self.vendor}:///{self.sid}'
-        else:
-            # You cannot login to unknown host.
-            if hasattr(self, 'host') is False \
-            or isinstance(self.host, str) is False:
-                raise AttributeError('incorrect host')
-
-            # You cannot login without knowing the port.
-            if hasattr(self, 'port') is False \
-            or isinstance(self.port, int) is False:
-                raise AttributeError('incorrect port')
-
-            # You need an account to login.
-            if hasattr(self, 'user') is False \
-            or isinstance(self.user, str) is False:
-                raise AttributeError('can not login without a username')
-
-            # Login without a password is prohibited.
-            if isinstance(password, str) is False:
-                raise AttributeError('can not loging without a password')
-
-            # Create connection url.
-            login = f'{self.user}:{password}'
-            address = f'{self.host}:{self.port}/{self.sid}'
-            credentials = f'{self.vendor}://{login}@{address}'
-
-        # Connect to database.
-        engine = sql.create_engine(credentials)
-        self.db = engine.connect()
-        pass
-
-    @you_shall_not_pass
-    def load(self):
-        """Load table."""
-        # Describe table.
-        self._metadata = sql.MetaData()
-        self.proxy = sql.Table(self.table, self._metadata,
-                               autoload=True, autoload_with=self.db,
-                               schema=self.schema)
+                self._primary_key_column = self._get_primary_key_column()
+                self._primary_key = None
         pass
 
     @you_shall_not_pass
     def new(self):
-        # New table means that record is not created yet so there cannot be
-        # any primary key by now.
+        """Initiate new logging record."""
         self._primary_key = None
-        pass
-
-    @you_shall_not_pass
-    def disconnect(self):
-        """Disconnect from the database."""
-        if hasattr(self, 'db') is True: self.db.close()
         pass
 
     @you_shall_not_pass
     def write(self, **values):
         """Write to logging table.
+
         In case of date_column was defined then its value will be refreshed.
         In case of no record was created before then the new one will be
         inserted to table. in other case record by known primary_key will be
@@ -842,23 +738,27 @@ class Table(Branch):
         **values
             The keyword argument is used to update fields in table.
         """
+        conn = self.database.connect()
         if self.date_column is not None:
             values[self.date_column] = dt.datetime.now()
         if self._primary_key is None:
             insert = self.proxy.insert().values(**values)
-            result = self.db.execute(insert)
+            result = conn.execute(insert)
             self._primary_key = result.inserted_primary_key[0]
         else:
             update = self.proxy.update().\
                 values(**values).\
-                where(self._primary_key_column==self._primary_key)
-            self.db.execute(update)
+                where(self._primary_key_column == self._primary_key)
+            conn.execute(update)
+        conn.close()
         pass
 
     def _get_primary_key_column(self):
-        """Read the name of table primary key column.
-        Note that currently only single column key is supported.
-        """
         if isinstance(self.proxy, sql.sql.schema.Table) is True:
-            primary_key_column = list(self.proxy.primary_key)[0]
-            return primary_key_column
+            primary_key_columns = list(self.proxy.primary_key)
+            ln = len(primary_key_columns)
+            if ln == 1:
+                primary_key_column = primary_key_columns[0]
+                return primary_key_column
+            else:
+                raise ValueError(f'primary key number should be 1 not {ln}')

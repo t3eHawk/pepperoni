@@ -1,8 +1,10 @@
+"""Output records formatter."""
 
 
 class Formatter():
-    """This class represents formatter - object that defines the format of the
-    output records.
+    """Output records formatter.
+
+    Class represents output records format.
 
     Parameters
     ----------
@@ -10,7 +12,7 @@ class Formatter():
         Format of the output record.
     error : str, optional
         Format of the error message.
-    trace : str, optional
+    traceback : str, optional
         Format of the traceback string.
     length : int, optional
         Basic length of line in output.
