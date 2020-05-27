@@ -402,6 +402,13 @@ class Email(Branch):
     def __init__(self, root, status=False, address=None, host=None, port=None,
                  tls=None, user=None, password=None, recipients=None):
         super().__init__(root, status=status)
+        self.address = None
+        self.host = None
+        self.port = None
+        self.tls = None
+        self.user = None
+        self.password = None
+        self.recipients = None
         self.configure(address=address, host=host, port=port, tls=tls,
                        user=user, password=password, recipients=recipients)
         pass
@@ -439,7 +446,12 @@ class Email(Branch):
             self.user = user
         if isinstance(address, str) is True:
             self.address = address
-        if isinstance(address, (str, list)) is True:
+        if isinstance(recipients, (str, list)) is True:
+            if isinstance(recipients, str) is True:
+                if ',' in recipients:
+                    recipients = recipients.replace(' ', '').split(',')
+                else:
+                    recipients = [recipients]
             self.recipients = recipients
 
         if (host is not None or port is not None or

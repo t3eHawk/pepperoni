@@ -161,6 +161,8 @@ class Logger():
                  maxerrors=False):
         # Unique name of the logger.
         self._name = name
+        # Add creating logger to special all_loggers dictinary.
+        all_loggers[self._name] = self
 
         # Attributes describing the application.
         self.app = None
@@ -169,12 +171,19 @@ class Logger():
 
         # Some logger important attributes
         self.start_date = dt.datetime.now()
-        self.rectypes = {'none': 'NONE', 'info': 'INFO', 'debug': 'DEBUG',
-                         'warning': 'WARNING', 'error': 'ERROR',
+        self.rectypes = {'none': 'NONE',
+                         'info': 'INFO',
+                         'debug': 'DEBUG',
+                         'warning': 'WARNING',
+                         'error': 'ERROR',
                          'critical': 'CRITICAL'}
-        self.messages = {'ok': 'OK', 'success': 'SUCCESS', 'fail': 'FAIL'}
+        self.messages = {'ok': 'OK',
+                         'success': 'SUCCESS',
+                         'fail': 'FAIL'}
+
         self._with_error = False
         self._count_errors = 0
+        self._all_errors = []
 
         # Complete the initial configuration.
         self.configure(app=app, desc=desc, version=version, status=status,
@@ -193,8 +202,6 @@ class Logger():
         # Set exit function.
         atexit.register(self._exit)
 
-        # Add creating logger to special all_loggers dictinary.
-        all_loggers[self._name] = self
         pass
 
     def __repr__(self):
@@ -215,6 +222,11 @@ class Logger():
     def count_errors(self):
         """Get the number of occurred errors."""
         return self._count_errors
+
+    @property
+    def all_errors(self):
+        """Get the list with all currently met errors."""
+        return self._all_errors
 
     def configure(self, app=None, desc=None, version=None, status=None,
                   console=None, file=None, email=None, html=None, table=None,
@@ -446,13 +458,15 @@ class Logger():
             The keyword arguments used for additional forms (variables) for
             record and message formatting.
         """
-        self._with_error = True
-        self._count_errors += 1
-
-        format = self.formatter.error if format is None else format
         # Parse the error.
         err_type, err_value, err_tb = sys.exc_info()
+
+        self._with_error = True
+        self._count_errors += 1
+        self._all_errors.append((err_type, err_value, err_tb))
+
         if message is None and err_type is not None:
+            format = self.formatter.error if format is None else format
             if isinstance(format, str) is True:
                 err_name = err_type.__name__
                 err_value = err_value

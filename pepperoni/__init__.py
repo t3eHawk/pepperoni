@@ -21,7 +21,7 @@ __copyright__ = 'Copyright 2020, The Pepperoni Project'
 __credits__ = ['Timur Faradzhov']
 
 __license__ = 'MIT'
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 __maintainer__ = 'Timur Faradzhov'
 __email__ = 'timurfaradzhov@gmail.com'
 __status__ = 'Development'
