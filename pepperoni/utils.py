@@ -1,3 +1,6 @@
+"""Application utils."""
+
+
 import os
 import sys
 

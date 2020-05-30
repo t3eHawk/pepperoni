@@ -1,8 +1,13 @@
-from .formatter import Formatter
+"""Logging header."""
+
+from .sysinfo import Descriptors
+
 
 class Header():
-    """This class represents header which can be used to record the most
-    significant variables of the application.
+    """Represents header with the most significatn application information.
+
+    A header can be used to record the most significant variables at the start
+    of logging.
 
     To exclude variables from header just put their names into args. The same
     can be done with a help of Header.exclude() method.
@@ -36,6 +41,8 @@ class Header():
     """
 
     def __init__(self, logger, *args, **kwargs):
+        desc = Descriptors()
+
         self.logger = logger
         self._used = False
         self.length = logger.formatter.length
@@ -43,18 +50,17 @@ class Header():
         self.items = {'application': lambda: self.logger.app,
                       'description': lambda: self.logger.desc,
                       'version': lambda: self.logger.version,
-                      'hostname': lambda: self.logger.sysinfo.desc.hostname,
-                      'ip': lambda: self.logger.sysinfo.desc.ip,
-                      'user': lambda: self.logger.sysinfo.desc.user,
-                      'pid': lambda: self.logger.sysinfo.desc.pid,
-                      'system': lambda: self.logger.sysinfo.desc.system,
-                      'python': lambda: self.logger.sysinfo.desc.python,
-                      'compiler': lambda: self.logger.sysinfo.desc.compiler,
-                      'interpreter': lambda:
-                          self.logger.sysinfo.desc.interpreter,
-                      'script': lambda: self.logger.sysinfo.desc.script,
-                      'pip': lambda: self.logger.sysinfo.desc.pip,
-                      'locdate': lambda: self.logger.sysinfo.desc.locdate}
+                      'hostname': lambda: desc.hostname,
+                      'ip': lambda: desc.ip,
+                      'user': lambda: desc.user,
+                      'pid': lambda: desc.pid,
+                      'system': lambda: desc.system,
+                      'python': lambda: desc.python,
+                      'compiler': lambda: desc.compiler,
+                      'interpreter': lambda: desc.interpreter,
+                      'script': lambda: desc.script,
+                      'pip': lambda: desc.pip,
+                      'locdate': lambda: desc.locdate}
         if args or kwargs:
             self.include(**kwargs)
             self.exclude(*args)
@@ -66,8 +72,10 @@ class Header():
         return self._used
 
     def create(self):
-        """Create header as a string based on variables stored in items
-        attribute.
+        """Create header.
+
+        Generate a formatted text with the list of the keys and values based on
+        variables stored in `items` attribute.
 
         Returns
         -------
@@ -113,8 +121,9 @@ class Header():
         Parameters
         ----------
         pos : str, optional
-            The argument used for position to which new variables will be added.
-            Can be start or end.
+            The argument used for position to which new variables will be
+            added.
+            Can be `start` or `end`.
         **kwargs
             The keyword arguments used to include variables to header.
         """

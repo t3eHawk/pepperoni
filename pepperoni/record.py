@@ -1,3 +1,5 @@
+"""Elements used for record preparation and creation."""
+
 import datetime as dt
 import os
 import sys
@@ -5,10 +7,13 @@ import threading
 
 
 class Record():
-    """This class describes the record. Record is an entity that is going to
+    """Represents a particular logging record as an object.
+
+    This class describes the record. Record is an entity that is going to
     be send to the output as a single and separated string.
     Main purpose of the record is to return formatted string based on two level
-    string templates and set of the forms - variables used in string formatting.
+    string templates and set of the forms - variables used in string
+    formatting.
     First level string template presents a whole record formatting including
     message.
     Second level string template present only message format.
@@ -31,6 +36,8 @@ class Record():
     +---------+----------------------------------------------------+
     |flname   |Script file name from which record was initiated    |
     +---------+----------------------------------------------------+
+    |thread   |Current thread name                                 |
+    +---------+----------------------------------------------------+
     |div      |Border element                                      |
     +---------+----------------------------------------------------+
     |message  |Input text message                                  |
@@ -45,7 +52,8 @@ class Record():
     message : str
         Input message that must be printed with that record.
     error : bool, optional
-        That is True or False to indicate that record include error information.
+        That is True or False to indicate that record include error
+        information.
     format : str, optional
         String template of the whole record.
     error_format : str or bool, optional
@@ -88,6 +96,7 @@ class Record():
         pass
 
     def __str__(self):
+        """Create record string."""
         return self.create()
 
     __repr__ = __str__

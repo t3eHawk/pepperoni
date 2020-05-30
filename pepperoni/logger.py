@@ -1,32 +1,29 @@
+"""Logging tools."""
+
 import atexit
 import datetime as dt
 import os
-import platform
-import pepperoni
 import sys
-import time
 import traceback
 
-from .conf import all_loggers
+from .cache import all_loggers
 from .formatter import Formatter
 from .header import Header
 from .output import Root
 from .record import Record
-from .sysinfo import Sysinfo
 
 
 class Logger():
-    """This class represents a single logger.
-    Logger by it self is a complex set of methods, items and commands that
-    together gives funcionality for advanced logging in different outputs:
-    console, file, email, database table, HTML document - and using information
-    from diffrent inputs: user messages, traceback, frames, user parameters,
-    execution arguments and systems descriptors.
+    """Represents a particular logger object.
+
+    This class allows to perform advanced logging to different outputs:
+    console, file, email, database table, HTML document - using information
+    from different inputs: user messages, traceback, frames, user parameters
+    and system descriptors.
 
     Each logger must have an unique name which will help to identify it.
-    Main application logger will have the same name as a python script file.
-    It can be accessed by native pepperoni methods or by calling `getlogger()`
-    method with no name.
+    Main application logger will have the same name as a main python script
+    file.
 
     Parameters
     ----------
@@ -147,22 +144,10 @@ class Logger():
         The output `Console` object. Shortcut for `Logger.root.console`.
     file : pepperoni.output.File
         The output file. Shortcut for `Logger.output.file`.
-    email : pepperoni.output.Email
-        The output email. Shortcut for `Logger.output.email`.
-    html: pepperoni.output.HTML
-        The output HTML document. Shortcut for `Logger.output.html`.
-    table: pepperoni.output.Table
-        The output table. Shortcut for `Logger.output.table`.
     formatter : pepperoni.formatter.Formatter
         Logger formatter which sets all formatting configuration like
-        record template, error message template, line length etc.
-    sysinfo : pepperoni.sysinfo.Sysinfo
-        Special input object which parse different inputs includeing system
-        specifications, flag arguments, execution parameters, user parameters
-        and environment variables and transforms all of that to `Dataset`
-        object. Through the `Dataset` object data can be easily accessed by
-        get item operation or by point like `sysinfo.desc['hostname']` or
-        `sysinfo.desc.hostname`.
+        record template, error message and traceback templates, line length
+        etc.
     header : pepperoni.header.Header
         The header that can be printed to the writable output.
     """
@@ -176,6 +161,8 @@ class Logger():
                  maxerrors=False):
         # Unique name of the logger.
         self._name = name
+        # Add creating logger to special all_loggers dictinary.
+        all_loggers[self._name] = self
 
         # Attributes describing the application.
         self.app = None
@@ -183,13 +170,20 @@ class Logger():
         self.version = None
 
         # Some logger important attributes
-        self._start_date = dt.datetime.now()
-        self.rectypes = {'none': 'NONE', 'info': 'INFO', 'debug': 'DEBUG',
-                         'warning': 'WARNING', 'error': 'ERROR',
+        self.start_date = dt.datetime.now()
+        self.rectypes = {'none': 'NONE',
+                         'info': 'INFO',
+                         'debug': 'DEBUG',
+                         'warning': 'WARNING',
+                         'error': 'ERROR',
                          'critical': 'CRITICAL'}
-        self.messages = {'ok': 'OK', 'success': 'SUCCESS', 'fail': 'FAIL'}
+        self.messages = {'ok': 'OK',
+                         'success': 'SUCCESS',
+                         'fail': 'FAIL'}
+
         self._with_error = False
         self._count_errors = 0
+        self._all_errors = []
 
         # Complete the initial configuration.
         self.configure(app=app, desc=desc, version=version, status=status,
@@ -204,41 +198,35 @@ class Logger():
         # Output shortcuts.
         self.console = self.root.console
         self.file = self.root.file
-        self.email = self.root.email
-        self.html = self.root.html
-        self.table = self.root.table
 
         # Set exit function.
         atexit.register(self._exit)
 
-        # Add creating logger to special all_loggers dictinary.
-        all_loggers[self._name] = self
         pass
 
-    def __str__(self):
-        return f'<Logger object "{self._name}">'
-
-    __repr__ = __str__
+    def __repr__(self):
+        """Get this Logger string representation."""
+        return f'<Logger "{self._name}">'
 
     @property
     def name(self):
-        """Unique logger name."""
+        """Get the unique logger name."""
         return self._name
 
     @property
-    def start_date(self):
-        """Logging start date."""
-        return self._start_date
-
-    @property
     def with_error(self):
-        """Flag that shows was an error or not."""
+        """Get the flag indicating whether an error has occurred or not."""
         return self._with_error
 
     @property
     def count_errors(self):
-        """The number of occured errors."""
+        """Get the number of occurred errors."""
         return self._count_errors
+
+    @property
+    def all_errors(self):
+        """Get the list with all currently met errors."""
+        return self._all_errors
 
     def configure(self, app=None, desc=None, version=None, status=None,
                   console=None, file=None, email=None, html=None, table=None,
@@ -246,9 +234,10 @@ class Logger():
                   db=None, format=None, info=None, debug=None, warning=None,
                   error=None, critical=None, alarming=None, control=None,
                   maxsize=None, maxdays=None, maxlevel=None, maxerrors=None):
-        """Main method to configure the logger and all its attributes.
-        This is an only one right way to customize logger. Parameters are the
-        same as for creatrion.
+        """Configure this particular Logger.
+
+        This is the only one right way to customize Logger. Parameters are the
+        same as for instance creatrion.
 
         Parameters
         ----------
@@ -307,44 +296,12 @@ class Logger():
         maxerrors : int or bool, optional
             The argument is used to define maximun number of errors.
         """
-        if isinstance(app, str) is True: self.app = app
-        if isinstance(desc, str) is True: self.desc = desc
+        if isinstance(app, str) is True:
+            self.app = app
+        if isinstance(desc, str) is True:
+            self.desc = desc
         if isinstance(version, (str, int, float)) is True:
-           self.version = version
-
-        # Build the output root if it is not exists. In other case modify
-        # existing output if it is requested.
-        if hasattr(self, 'root') is False:
-            self.root = Root(self, console=console, file=file, email=email,
-                             html=html, table=table, status=status,
-                             directory=directory, filename=filename,
-                             extension=extension, smtp=smtp, db=db)
-        else:
-            for key, value in {'console': console, 'file': file,
-                               'email': email, 'html': html,
-                               'table': table}.items():
-                if value is True:
-                    getattr(self.root, key).open()
-                    if key == 'file':
-                        getattr(self.root, key).new()
-                elif value is False:
-                    getattr(self.root, key).close()
-
-            # Customize output file path.
-            path = {}
-            if directory is not None: path['dir'] = directory
-            if filename is not None: path['name'] = filename
-            if extension is not None: path['ext'] = extension
-            if len(path) > 0:
-                self.root.file.configure(**path)
-
-            # Customize SMTP server.
-            if isinstance(smtp, dict) is True:
-                self.root.email.configure(**smtp)
-
-            # Customize database connection.
-            if isinstance(db, dict) is True:
-                self.root.table.configure(**db)
+            self.version = version
 
         # Create formatter in case it is not exists yet or just customize it.
         # Parameter format can be either string or dictionary.
@@ -367,6 +324,43 @@ class Logger():
             if isinstance(value, bool) is True:
                 self.filters[key] = value
 
+        # Build the output root if it is not exists. In other case modify
+        # existing output if it is requested.
+        if hasattr(self, 'root') is False:
+            self.root = Root(self, console=console, file=file, email=email,
+                             html=html, table=table, status=status,
+                             directory=directory, filename=filename,
+                             extension=extension, smtp=smtp, db=db)
+        else:
+            for key, value in {'console': console, 'file': file,
+                               'email': email, 'html': html,
+                               'table': table}.items():
+                if value is True:
+                    getattr(self.root, key).open()
+                    if key == 'file':
+                        getattr(self.root, key).new()
+                elif value is False:
+                    getattr(self.root, key).close()
+
+            # Customize output file path.
+            path = {}
+            if directory is not None:
+                path['dir'] = directory
+            if filename is not None:
+                path['name'] = filename
+            if extension is not None:
+                path['ext'] = extension
+            if len(path) > 0:
+                self.root.file.configure(**path)
+
+            # Customize SMTP server.
+            if isinstance(smtp, dict) is True:
+                self.root.email.configure(**smtp)
+
+            # Customize database connection.
+            if isinstance(db, dict) is True:
+                self.root.table.configure(**db)
+
         # Customize limits and parameters of execution behaviour.
         if isinstance(maxsize, (int, float, bool)) is True:
             self._maxsize = maxsize
@@ -381,10 +375,6 @@ class Logger():
             self._alarming = alarming
         if isinstance(control, bool) is True:
             self._control = control
-
-        # Initialize sysinfo instance when not exists.
-        if hasattr(self, 'sysinfo') is False:
-            self.sysinfo = Sysinfo(self)
 
         # Initialize header instance when not exists.
         if hasattr(self, 'header') is False:
@@ -404,7 +394,7 @@ class Logger():
         pass
 
     def record(self, rectype, message, error=False, **kwargs):
-        """Basic method to write records.
+        """Generate output record.
 
         Parameters
         ----------
@@ -442,6 +432,7 @@ class Logger():
     def error(self, message=None, rectype='error', format=None, alarming=False,
               level=1, **kwargs):
         """Send ERROR record to the output.
+
         If exception in current traceback exists then method will format the
         exception according to `formatter.error` string presentation. If
         `formatter.error` is set to `False` the exception will be just printed
@@ -467,13 +458,15 @@ class Logger():
             The keyword arguments used for additional forms (variables) for
             record and message formatting.
         """
-        self._with_error = True
-        self._count_errors += 1
-
-        format = self.formatter.error if format is None else format
         # Parse the error.
         err_type, err_value, err_tb = sys.exc_info()
+
+        self._with_error = True
+        self._count_errors += 1
+        self._all_errors.append((err_type, err_value, err_tb))
+
         if message is None and err_type is not None:
+            format = self.formatter.error if format is None else format
             if isinstance(format, str) is True:
                 err_name = err_type.__name__
                 err_value = err_value
@@ -535,8 +528,9 @@ class Logger():
         pass
 
     def subhead(self, string):
-        """Send subheader as upper-case text between two border lines to the
-        output.
+        """Send subheader to the output.
+
+        Subheader is an upper-case text between two border lines.
 
         Parameters
         ----------
@@ -560,8 +554,9 @@ class Logger():
         pass
 
     def bound(self, div=None, length=None):
-        """Write horizontal border in the output. Useful when need to separate
-        different blocks of information.
+        """Write horizontal border in the output.
+
+        Useful when need to separate different blocks of information.
 
         Parameters
         ----------
@@ -609,7 +604,7 @@ class Logger():
 
     def restart(self):
         """Restart logging. Will open new file."""
-        self._start_date = dt.datetime.now()
+        self.start_date = dt.datetime.now()
         self.__calculate_restart_date()
         if self.root.file.status is True:
             self.root.file.new()
@@ -617,16 +612,18 @@ class Logger():
             self.head()
         pass
 
-    def send(self, *args, **kwargs):
-        """Send email message. Note that SMTP server connection must be
-        configured.
+    def email(self, *args, **kwargs):
+        """Send email message.
+
+        Note that SMTP server connection must be configured.
         """
         self.root.email.send(*args, **kwargs)
         pass
 
-    def set(self, **kwargs):
-        """Update values in table. Note that DB connection must be
-        configured.
+    def table(self, **kwargs):
+        """Write information to database table.
+
+        Note that DB connection must be configured.
         """
         self.root.table.write(**kwargs)
         pass
@@ -638,17 +635,15 @@ class Logger():
         pass
 
     def __calculate_restart_date(self):
-        """Calculate the date when logger must be restarted according to
-        maxdays parameter.
-        """
-        self.__restart_date = (self._start_date
+        # Calculate the date when logger must be restarted according to
+        # maxdays parameter.
+        self.__restart_date = (self.start_date
                                + dt.timedelta(days=self._maxdays))
         pass
 
     def __check_file_stats(self):
-        """Check the output file statistics to catch when current file must be
-        closed and new one must be opened.
-        """
+        # Check the output file statistics to catch when current file must be
+        # closed and new one must be opened.
         if self.root.file.status is True:
             if self._maxsize is not False:
                 if self.root.file.size is not None:
