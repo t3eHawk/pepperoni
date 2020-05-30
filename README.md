@@ -1,25 +1,19 @@
 # pepperoni
 
-Pepperoni is an alternative for Python built-in logging module.
-It has similar syntax but at the same time allow you to create more elegant,
-large and extendible logs for you applications.
-
-Also Pepperoni is a toolkit making your development easier and faster.
+Pepperoni is a toolkit for Python applications development making the process more convenient.
 
 ## Features
-Pepperoni loggers provide a set of out-of-the-box solutions:
-- All methods to create, customize and support your logs.
-- Writing to the console, file, database, email.
-- Automatic alarm sending to your email in case of registered error.
-- Easy way to read and configure execution arguments of different types.
-- Gathered statistics including a lot of system parameters, environment
-  variables, parameters from file and so on.
+Pepperoni provides a set of out-of-the-box solutions:
+* Logger - alternative for Python built-in logging module with similar syntax but its own way of configuration and set of unique features.
+* Sysinfo - container with information from different inputs such as systems descriptors, environment variables, execution arguments, user arguments, user commands, etc.
+* Credentials - generic way for access to the most secure information placed into the special configuration files from within your applications.
+* Database - wrapper of fantastic SQLAlchemy, gives simple interface that allow you to connect and interract with database and its objects from within your applications using minumum code.
 
 ## Getting Started
 ### Requirements
 Operation systems: Windows, Linux, Mac OS.
 
-Python version: 3.7.1.
+Python version: 3.8.3.
 
 ### Installation
 Use pip to install the module:
@@ -28,7 +22,7 @@ pip install pepperoni
 ```
 
 ### How to Use
-To start just call the logger:
+#### Logger
 ```python
 import pepperoni
 

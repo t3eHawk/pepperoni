@@ -1,11 +1,19 @@
-"""Developer-friendly tool kit.
+"""Developer-friendly Python toolkit.
 
-This module proposes such developer tools as:
-- Logger - tool for advanced logging.
-- Sysinfo - tool to read system information and user parameters and arguments.
-- Credentials - tool to read user/password details from special configuration
-  files.
-- Database - tool to connect and work with databases using SQLAlchemy.
+Pepperoni is a toolkit for Python applications development making the process
+more convenient.
+
+Pepperoni provides a set of out-of-the-box solutions:
+* Logger - alternative for Python built-in logging module with similar syntax
+  but its own way of configuration and set of unique features.
+* Sysinfo - container with information from different inputs such as systems
+  descriptors, environment variables, execution arguments, user arguments,
+  user commands, etc.
+* Credentials - generic way for access to the most secure information placed
+  into the special configuration files from within your applications.
+* Database - wrapper of fantastic SQLAlchemy, gives simple interface that
+  allow you to connect and interract with database and its objects from within
+  your applications using minumum code.
 """
 
 
